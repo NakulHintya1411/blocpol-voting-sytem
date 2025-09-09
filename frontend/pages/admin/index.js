@@ -295,7 +295,7 @@ export default function AdminDashboard() {
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/create-election')}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/create-election-dynamic')}>
               <div className="p-6 text-center">
                 <Plus className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create Election</h3>
@@ -303,7 +303,7 @@ export default function AdminDashboard() {
               </div>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/register-candidates')}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/register-candidates-dynamic')}>
               <div className="p-6 text-center">
                 <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Register Candidates</h3>
