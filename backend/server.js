@@ -1,53 +1,81 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const { ethers } = require('ethers');
-const connectDB = require('./config/database');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Import routes
-const adminRoutes = require('./routes/admin');
-const voterRoutes = require('./routes/voter');
-const electionRoutes = require('./routes/election');
 
 // Middleware
-app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'BlocPol Backend API is running',
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
 });
 
-// API Routes
-app.use('/api/admin', adminRoutes);
-app.use('/api/voter', voterRoutes);
-app.use('/api/election', electionRoutes);
+// Basic API endpoints
+app.get('/api/elections', (req, res) => {
+  res.json({
+    success: true,
+    elections: [],
+    message: 'No elections found'
+  });
+});
+
+app.get('/api/candidates', (req, res) => {
+  res.json({
+    success: true,
+    candidates: [],
+    message: 'No candidates found'
+  });
+});
+
+app.get('/api/admin-stats', (req, res) => {
+  res.json({
+    success: true,
+    stats: {
+      totalVoters: 0,
+      totalCandidates: 0,
+      totalVotes: 0,
+      activeElections: 0
+    }
+  });
+});
+
+// Database connection
+const connectDB = async () => {
+  try {
+    if (process.env.MONGODB_URI) {
+      await mongoose.connect(process.env.MONGODB_URI);
+      console.log('✅ MongoDB connected successfully');
+    } else {
+      console.log('⚠️  MONGODB_URI not provided, running without database');
+    }
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+  }
+};
+
+// Connect to database
+connectDB();
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
@@ -55,28 +83,17 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'API endpoint not found'
   });
 });
 
-// Connect to database and start server
-const startServer = async () => {
-  try {
-    // Connect to MongoDB
-    await connectDB();
-    
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Admin addresses: ${process.env.ADMIN_ADDRESSES || 'Not configured'}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+const PORT = process.env.PORT || 3001;
 
-startServer();
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 BlocPol Backend running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+});
 
 module.exports = app;
