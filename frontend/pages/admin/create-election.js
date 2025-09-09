@@ -41,9 +41,20 @@ export default function CreateElection() {
     setIsClient(true);
   }, []);
 
-  // Redirect if not admin
+  // Show loading while client-side rendering
   if (!isClient) {
-    return <LoadingSpinner />;
+    return (
+      <>
+        <Head>
+          <title>Create Election - BlocPol</title>
+          <meta name="description" content="Create a new election" />
+        </Head>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </>
+    );
   }
 
   if (!isConnected || !account) {

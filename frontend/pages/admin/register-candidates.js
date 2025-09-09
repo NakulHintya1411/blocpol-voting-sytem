@@ -48,9 +48,20 @@ export default function RegisterCandidates() {
     setIsClient(true);
   }, []);
 
-  // Redirect if not admin
+  // Show loading while client-side rendering
   if (!isClient) {
-    return <LoadingSpinner />;
+    return (
+      <>
+        <Head>
+          <title>Register Candidates - BlocPol</title>
+          <meta name="description" content="Register candidates for elections" />
+        </Head>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </>
+    );
   }
 
   if (!isConnected || !account) {
