@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build application
+      run: npm run build
+
+    - name: Create release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changes in this Release
+          
+          See [CHANGELOG.md](./CHANGELOG.md) for detailed information about this release.
+          
+          ## Installation
+          
+          ```bash
+          npm install blocpol-frontend@${{ github.ref_name }}
+          ```
+          
+          ## Documentation
+          
+          - [README.md](./README.md)
+          - [API Documentation](./API.md)
+          - [Development Guide](./DEVELOPMENT.md)
+          - [Testing Guide](./TESTING.md)
+          
+          ## Support
+          
+          For support and questions:
+          - [GitHub Issues](https://github.com/yourusername/blocpol-frontend/issues)
+          - [GitHub Discussions](https://github.com/yourusername/blocpol-frontend/discussions)
+          - [Email](mailto:support@blocpol.com)
+        draft: false
+        prerelease: false
+
+    - name: Publish to NPM
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v20
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.ORG_ID }}
+        vercel-project-id: ${{ secrets.PROJECT_ID }}
+        vercel-args: '--prod'
+
+    - name: Notify team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#releases'
+        text: '🚀 New release ${{ github.ref }} has been published!'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

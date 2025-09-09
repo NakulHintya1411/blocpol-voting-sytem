@@ -1,0 +1,57 @@
+# Global owners
+* @yourusername
+
+# Frontend specific
+/frontend/ @frontend-team
+
+# Components
+/frontend/components/ @frontend-team @ui-team
+
+# Pages
+/frontend/pages/ @frontend-team @routing-team
+
+# Styles
+/frontend/styles/ @frontend-team @ui-team
+
+# Utils
+/frontend/utils/ @frontend-team @core-team
+
+# Services
+/frontend/services/ @frontend-team @api-team
+
+# Contexts
+/frontend/contexts/ @frontend-team @state-team
+
+# Tests
+/frontend/test/ @frontend-team @testing-team
+/frontend/tests/ @frontend-team @testing-team
+/frontend/*.test.js @frontend-team @testing-team
+/frontend/*.test.ts @frontend-team @testing-team
+
+# Documentation
+/frontend/*.md @frontend-team @docs-team
+
+# Configuration
+/frontend/package.json @frontend-team @core-team
+/frontend/next.config.js @frontend-team @core-team
+/frontend/tailwind.config.js @frontend-team @ui-team
+/frontend/postcss.config.js @frontend-team @ui-team
+/frontend/.eslintrc.json @frontend-team @linting-team
+/frontend/.prettierrc @frontend-team @linting-team
+/frontend/.editorconfig @frontend-team @linting-team
+
+# GitHub workflows
+/.github/workflows/ @devops-team @ci-team
+
+# Security
+/frontend/SECURITY.md @security-team
+/frontend/.github/security/ @security-team
+
+# Performance
+/frontend/PERFORMANCE.md @performance-team
+/frontend/.github/performance/ @performance-team
+
+# Accessibility
+/frontend/ACCESSIBILITY.md @accessibility-team
+/frontend/.github/accessibility/ @accessibility-team
+

@@ -1,0 +1,486 @@
+name: Cleanup
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Weekly on Sunday at 3 AM
+  workflow_dispatch:
+
+jobs:
+  cleanup-old-backups:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Clean up old backups
+      run: |
+        # Delete backups older than 30 days
+        aws s3 ls s3://blocpol-backups/ --recursive | while read -r line; do
+          createDate=$(echo $line | awk '{print $1" "$2}')
+          createDate=$(date -d"$createDate" +%s)
+          olderThan=$(date -d"30 days ago" +%s)
+          if [[ $createDate -lt $olderThan ]]; then
+            fileName=$(echo $line | awk '{print $4}')
+            aws s3 rm s3://blocpol-backups/$fileName
+            echo "Deleted old backup: $fileName"
+          fi
+        done
+
+  cleanup-old-logs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Clean up old logs
+      run: |
+        # Delete logs older than 7 days
+        aws s3 ls s3://blocpol-logs/ --recursive | while read -r line; do
+          createDate=$(echo $line | awk '{print $1" "$2}')
+          createDate=$(date -d"$createDate" +%s)
+          olderThan=$(date -d"7 days ago" +%s)
+          if [[ $createDate -lt $olderThan ]]; then
+            fileName=$(echo $line | awk '{print $4}')
+            aws s3 rm s3://blocpol-logs/$fileName
+            echo "Deleted old log: $fileName"
+          fi
+        done
+
+  cleanup-old-test-results:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Clean up old test results
+      run: |
+        # Delete test results older than 14 days
+        aws s3 ls s3://blocpol-test-results/ --recursive | while read -r line; do
+          createDate=$(echo $line | awk '{print $1" "$2}')
+          createDate=$(date -d"$createDate" +%s)
+          olderThan=$(date -d"14 days ago" +%s)
+          if [[ $createDate -lt $olderThan ]]; then
+            fileName=$(echo $line | awk '{print $4}')
+            aws s3 rm s3://blocpol-test-results/$fileName
+            echo "Deleted old test result: $fileName"
+          fi
+        done
+
+  cleanup-old-performance-results:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Clean up old performance results
+      run: |
+        # Delete performance results older than 21 days
+        aws s3 ls s3://blocpol-performance/ --recursive | while read -r line; do
+          createDate=$(echo $line | awk '{print $1" "$2}')
+          createDate=$(date -d"$createDate" +%s)
+          olderThan=$(date -d"21 days ago" +%s)
+          if [[ $createDate -lt $olderThan ]]; then
+            fileName=$(echo $line | awk '{print $4}')
+            aws s3 rm s3://blocpol-performance/$fileName
+            echo "Deleted old performance result: $fileName"
+          fi
+        done
+
+  cleanup-old-accessibility-results:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Clean up old accessibility results
+      run: |
+        # Delete accessibility results older than 21 days
+        aws s3 ls s3://blocpol-accessibility/ --recursive | while read -r line; do
+          createDate=$(echo $line | awk '{print $1" "$2}')
+          createDate=$(date -d"$createDate" +%s)
+          olderThan=$(date -d"21 days ago" +%s)
+          if [[ $createDate -lt $olderThan ]]; then
+            fileName=$(echo $line | awk '{print $4}')
+            aws s3 rm s3://blocpol-accessibility/$fileName
+            echo "Deleted old accessibility result: $fileName"
+          fi
+        done
+
+  cleanup-old-security-results:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Clean up old security results
+      run: |
+        # Delete security results older than 30 days
+        aws s3 ls s3://blocpol-security/ --recursive | while read -r line; do
+          createDate=$(echo $line | awk '{print $1" "$2}')
+          createDate=$(date -d"$createDate" +%s)
+          olderThan=$(date -d"30 days ago" +%s)
+          if [[ $createDate -lt $olderThan ]]; then
+            fileName=$(echo $line | awk '{print $4}')
+            aws s3 rm s3://blocpol-security/$fileName
+            echo "Deleted old security result: $fileName"
+          fi
+        done
+
+  cleanup-old-docker-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Clean up old Docker images
+      run: |
+        # Delete Docker images older than 30 days
+        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.CreatedAt}}" | grep blocpol | while read -r line; do
+          image=$(echo $line | awk '{print $1}')
+          tag=$(echo $line | awk '{print $2}')
+          createdAt=$(echo $line | awk '{print $3" "$4" "$5" "$6" "$7}')
+          createdAt=$(date -d"$createdAt" +%s)
+          olderThan=$(date -d"30 days ago" +%s)
+          if [[ $createdAt -lt $olderThan ]]; then
+            docker rmi $image:$tag
+            echo "Deleted old Docker image: $image:$tag"
+          fi
+        done
+
+  cleanup-old-github-artifacts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub artifacts
+      run: |
+        # Delete artifacts older than 30 days
+        gh api repos/:owner/:repo/actions/artifacts --jq '.artifacts[] | select(.created_at < (now - 2592000)) | .id' | while read -r artifact_id; do
+          gh api repos/:owner/:repo/actions/artifacts/$artifact_id -X DELETE
+          echo "Deleted old artifact: $artifact_id"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-runs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub runs
+      run: |
+        # Delete runs older than 30 days
+        gh api repos/:owner/:repo/actions/runs --jq '.workflow_runs[] | select(.created_at < (now - 2592000)) | .id' | while read -r run_id; do
+          gh api repos/:owner/:repo/actions/runs/$run_id -X DELETE
+          echo "Deleted old run: $run_id"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-issues:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub issues
+      run: |
+        # Close issues older than 90 days that are not assigned
+        gh api repos/:owner/:repo/issues --jq '.issues[] | select(.created_at < (now - 7776000) and .assignee == null) | .number' | while read -r issue_number; do
+          gh api repos/:owner/:repo/issues/$issue_number -X PATCH -f state=closed
+          echo "Closed old issue: $issue_number"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-pull-requests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub pull requests
+      run: |
+        # Close pull requests older than 30 days that are not merged
+        gh api repos/:owner/:repo/pulls --jq '.pull_requests[] | select(.created_at < (now - 2592000) and .merged_at == null) | .number' | while read -r pr_number; do
+          gh api repos/:owner/:repo/pulls/$pr_number -X PATCH -f state=closed
+          echo "Closed old pull request: $pr_number"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-releases:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub releases
+      run: |
+        # Delete releases older than 90 days that are not latest
+        gh api repos/:owner/:repo/releases --jq '.releases[] | select(.created_at < (now - 7776000) and .prerelease == false) | .id' | while read -r release_id; do
+          gh api repos/:owner/:repo/releases/$release_id -X DELETE
+          echo "Deleted old release: $release_id"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub branches
+      run: |
+        # Delete branches older than 30 days that are not main or develop
+        gh api repos/:owner/:repo/branches --jq '.branches[] | select(.name != "main" and .name != "develop" and .commit.date < (now - 2592000)) | .name' | while read -r branch_name; do
+          gh api repos/:owner/:repo/git/refs/heads/$branch_name -X DELETE
+          echo "Deleted old branch: $branch_name"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-tags:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub tags
+      run: |
+        # Delete tags older than 90 days
+        gh api repos/:owner/:repo/tags --jq '.tags[] | select(.commit.date < (now - 7776000)) | .name' | while read -r tag_name; do
+          gh api repos/:owner/:repo/git/refs/tags/$tag_name -X DELETE
+          echo "Deleted old tag: $tag_name"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub commits
+      run: |
+        # Delete commits older than 90 days that are not on main or develop
+        gh api repos/:owner/:repo/commits --jq '.commits[] | select(.commit.date < (now - 7776000) and .ref != "refs/heads/main" and .ref != "refs/heads/develop") | .sha' | while read -r commit_sha; do
+          gh api repos/:owner/:repo/git/commits/$commit_sha -X DELETE
+          echo "Deleted old commit: $commit_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-blobs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub blobs
+      run: |
+        # Delete blobs older than 90 days
+        gh api repos/:owner/:repo/git/trees/main --jq '.tree[] | select(.type == "blob" and .date < (now - 7776000)) | .sha' | while read -r blob_sha; do
+          gh api repos/:owner/:repo/git/blobs/$blob_sha -X DELETE
+          echo "Deleted old blob: $blob_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-trees:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub trees
+      run: |
+        # Delete trees older than 90 days
+        gh api repos/:owner/:repo/git/trees/main --jq '.tree[] | select(.type == "tree" and .date < (now - 7776000)) | .sha' | while read -r tree_sha; do
+          gh api repos/:owner/:repo/git/trees/$tree_sha -X DELETE
+          echo "Deleted old tree: $tree_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-refs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub refs
+      run: |
+        # Delete refs older than 90 days
+        gh api repos/:owner/:repo/git/refs --jq '.refs[] | select(.date < (now - 7776000)) | .ref' | while read -r ref_name; do
+          gh api repos/:owner/:repo/git/refs/$ref_name -X DELETE
+          echo "Deleted old ref: $ref_name"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-notes:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub notes
+      run: |
+        # Delete notes older than 90 days
+        gh api repos/:owner/:repo/git/notes --jq '.notes[] | select(.date < (now - 7776000)) | .sha' | while read -r note_sha; do
+          gh api repos/:owner/:repo/git/notes/$note_sha -X DELETE
+          echo "Deleted old note: $note_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub commits
+      run: |
+        # Delete commits older than 90 days
+        gh api repos/:owner/:repo/commits --jq '.commits[] | select(.commit.date < (now - 7776000)) | .sha' | while read -r commit_sha; do
+          gh api repos/:owner/:repo/git/commits/$commit_sha -X DELETE
+          echo "Deleted old commit: $commit_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-trees:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub trees
+      run: |
+        # Delete trees older than 90 days
+        gh api repos/:owner/:repo/git/trees/main --jq '.tree[] | select(.type == "tree" and .date < (now - 7776000)) | .sha' | while read -r tree_sha; do
+          gh api repos/:owner/:repo/git/trees/$tree_sha -X DELETE
+          echo "Deleted old tree: $tree_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-refs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub refs
+      run: |
+        # Delete refs older than 90 days
+        gh api repos/:owner/:repo/git/refs --jq '.refs[] | select(.date < (now - 7776000)) | .ref' | while read -r ref_name; do
+          gh api repos/:owner/:repo/git/refs/$ref_name -X DELETE
+          echo "Deleted old ref: $ref_name"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-old-github-notes:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Clean up old GitHub notes
+      run: |
+        # Delete notes older than 90 days
+        gh api repos/:owner/:repo/git/notes --jq '.notes[] | select(.date < (now - 7776000)) | .sha' | while read -r note_sha; do
+          gh api repos/:owner/:repo/git/notes/$note_sha -X DELETE
+          echo "Deleted old note: $note_sha"
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-notification:
+    runs-on: ubuntu-latest
+    needs: [cleanup-old-backups, cleanup-old-logs, cleanup-old-test-results, cleanup-old-performance-results, cleanup-old-accessibility-results, cleanup-old-security-results, cleanup-old-docker-images, cleanup-old-github-artifacts, cleanup-old-github-runs, cleanup-old-github-issues, cleanup-old-github-pull-requests, cleanup-old-github-releases, cleanup-old-github-branches, cleanup-old-github-tags, cleanup-old-github-commits, cleanup-old-github-trees, cleanup-old-github-refs, cleanup-old-github-notes]
+    if: always()
+
+    steps:
+    - name: Notify cleanup team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#cleanup'
+        text: |
+          Cleanup completed for ${{ github.ref_name }}
+          - Old Backups: ${{ needs.cleanup-old-backups.result }}
+          - Old Logs: ${{ needs.cleanup-old-logs.result }}
+          - Old Test Results: ${{ needs.cleanup-old-test-results.result }}
+          - Old Performance Results: ${{ needs.cleanup-old-performance-results.result }}
+          - Old Accessibility Results: ${{ needs.cleanup-old-accessibility-results.result }}
+          - Old Security Results: ${{ needs.cleanup-old-security-results.result }}
+          - Old Docker Images: ${{ needs.cleanup-old-docker-images.result }}
+          - Old GitHub Artifacts: ${{ needs.cleanup-old-github-artifacts.result }}
+          - Old GitHub Runs: ${{ needs.cleanup-old-github-runs.result }}
+          - Old GitHub Issues: ${{ needs.cleanup-old-github-issues.result }}
+          - Old GitHub Pull Requests: ${{ needs.cleanup-old-github-pull-requests.result }}
+          - Old GitHub Releases: ${{ needs.cleanup-old-github-releases.result }}
+          - Old GitHub Branches: ${{ needs.cleanup-old-github-branches.result }}
+          - Old GitHub Tags: ${{ needs.cleanup-old-github-tags.result }}
+          - Old GitHub Commits: ${{ needs.cleanup-old-github-commits.result }}
+          - Old GitHub Trees: ${{ needs.cleanup-old-github-trees.result }}
+          - Old GitHub Refs: ${{ needs.cleanup-old-github-refs.result }}
+          - Old GitHub Notes: ${{ needs.cleanup-old-github-notes.result }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

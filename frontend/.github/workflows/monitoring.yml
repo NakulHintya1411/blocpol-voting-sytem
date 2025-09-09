@@ -1,0 +1,273 @@
+name: Monitoring
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check application health
+      run: |
+        curl -f http://localhost:3000/health || exit 1
+        echo "Application is healthy"
+
+    - name: Check database health
+      run: |
+        curl -f http://localhost:3001/api/health || exit 1
+        echo "Database is healthy"
+
+    - name: Check API health
+      run: |
+        curl -f http://localhost:3001/api/status || exit 1
+        echo "API is healthy"
+
+  performance-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Monitor response time
+      run: |
+        response_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:3000)
+        echo "Response time: ${response_time}s"
+        if (( $(echo "$response_time > 2.0" | bc -l) )); then
+          echo "Response time is too high: ${response_time}s"
+          exit 1
+        fi
+
+    - name: Monitor memory usage
+      run: |
+        memory_usage=$(ps aux | grep node | awk '{sum+=$6} END {print sum/1024}')
+        echo "Memory usage: ${memory_usage}MB"
+        if (( $(echo "$memory_usage > 1000" | bc -l) )); then
+          echo "Memory usage is too high: ${memory_usage}MB"
+          exit 1
+        fi
+
+    - name: Monitor CPU usage
+      run: |
+        cpu_usage=$(ps aux | grep node | awk '{sum+=$3} END {print sum}')
+        echo "CPU usage: ${cpu_usage}%"
+        if (( $(echo "$cpu_usage > 80" | bc -l) )); then
+          echo "CPU usage is too high: ${cpu_usage}%"
+          exit 1
+        fi
+
+  error-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check error logs
+      run: |
+        error_count=$(grep -c "ERROR" logs/error.log || echo "0")
+        echo "Error count: ${error_count}"
+        if [ "$error_count" -gt 10 ]; then
+          echo "Too many errors: ${error_count}"
+          exit 1
+        fi
+
+    - name: Check warning logs
+      run: |
+        warning_count=$(grep -c "WARN" logs/warning.log || echo "0")
+        echo "Warning count: ${warning_count}"
+        if [ "$warning_count" -gt 50 ]; then
+          echo "Too many warnings: ${warning_count}"
+          exit 1
+        fi
+
+  security-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check for security issues
+      run: |
+        security_issues=$(grep -c "SECURITY" logs/security.log || echo "0")
+        echo "Security issues: ${security_issues}"
+        if [ "$security_issues" -gt 0 ]; then
+          echo "Security issues detected: ${security_issues}"
+          exit 1
+        fi
+
+    - name: Check for failed login attempts
+      run: |
+        failed_logins=$(grep -c "FAILED_LOGIN" logs/auth.log || echo "0")
+        echo "Failed logins: ${failed_logins}"
+        if [ "$failed_logins" -gt 20 ]; then
+          echo "Too many failed logins: ${failed_logins}"
+          exit 1
+        fi
+
+  uptime-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check uptime
+      run: |
+        uptime=$(uptime | awk '{print $3,$4}' | sed 's/,//')
+        echo "System uptime: ${uptime}"
+        if [[ "$uptime" == *"days"* ]]; then
+          days=$(echo $uptime | awk '{print $1}')
+          if [ "$days" -lt 1 ]; then
+            echo "System was recently restarted"
+            exit 1
+          fi
+        fi
+
+  disk-space-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check disk space
+      run: |
+        disk_usage=$(df -h / | awk 'NR==2{print $5}' | sed 's/%//')
+        echo "Disk usage: ${disk_usage}%"
+        if [ "$disk_usage" -gt 80 ]; then
+          echo "Disk usage is too high: ${disk_usage}%"
+          exit 1
+        fi
+
+  network-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check network connectivity
+      run: |
+        ping -c 1 google.com > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+          echo "Network connectivity issues"
+          exit 1
+        fi
+        echo "Network is healthy"
+
+    - name: Check DNS resolution
+      run: |
+        nslookup google.com > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+          echo "DNS resolution issues"
+          exit 1
+        fi
+        echo "DNS is healthy"
+
+  database-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check database connections
+      run: |
+        db_connections=$(psql -c "SELECT count(*) FROM pg_stat_activity;" | awk 'NR==3{print $1}')
+        echo "Database connections: ${db_connections}"
+        if [ "$db_connections" -gt 100 ]; then
+          echo "Too many database connections: ${db_connections}"
+          exit 1
+        fi
+
+    - name: Check database size
+      run: |
+        db_size=$(psql -c "SELECT pg_size_pretty(pg_database_size('blocpol'));" | awk 'NR==3{print $1}')
+        echo "Database size: ${db_size}"
+        if [[ "$db_size" == *"GB"* ]]; then
+          size_gb=$(echo $db_size | sed 's/GB//')
+          if (( $(echo "$size_gb > 10" | bc -l) )); then
+            echo "Database size is too large: ${db_size}"
+            exit 1
+          fi
+        fi
+
+  api-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check API endpoints
+      run: |
+        endpoints=("/api/health" "/api/status" "/api/candidates" "/api/results")
+        for endpoint in "${endpoints[@]}"; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001$endpoint)
+          if [ "$response" -ne 200 ]; then
+            echo "API endpoint $endpoint returned $response"
+            exit 1
+          fi
+        done
+        echo "All API endpoints are healthy"
+
+    - name: Check API response time
+      run: |
+        api_response_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:3001/api/health)
+        echo "API response time: ${api_response_time}s"
+        if (( $(echo "$api_response_time > 1.0" | bc -l) )); then
+          echo "API response time is too high: ${api_response_time}s"
+          exit 1
+        fi
+
+  frontend-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check frontend pages
+      run: |
+        pages=("/" "/candidates" "/results" "/register")
+        for page in "${pages[@]}"; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000$page)
+          if [ "$response" -ne 200 ]; then
+            echo "Frontend page $page returned $response"
+            exit 1
+          fi
+        done
+        echo "All frontend pages are healthy"
+
+    - name: Check frontend response time
+      run: |
+        frontend_response_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:3000)
+        echo "Frontend response time: ${frontend_response_time}s"
+        if (( $(echo "$frontend_response_time > 2.0" | bc -l) )); then
+          echo "Frontend response time is too high: ${frontend_response_time}s"
+          exit 1
+        fi
+
+  monitoring-notification:
+    runs-on: ubuntu-latest
+    needs: [health-check, performance-monitoring, error-monitoring, security-monitoring, uptime-monitoring, disk-space-monitoring, network-monitoring, database-monitoring, api-monitoring, frontend-monitoring]
+    if: always()
+
+    steps:
+    - name: Notify monitoring team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#monitoring'
+        text: |
+          Monitoring completed for ${{ github.ref_name }}
+          - Health Check: ${{ needs.health-check.result }}
+          - Performance Monitoring: ${{ needs.performance-monitoring.result }}
+          - Error Monitoring: ${{ needs.error-monitoring.result }}
+          - Security Monitoring: ${{ needs.security-monitoring.result }}
+          - Uptime Monitoring: ${{ needs.uptime-monitoring.result }}
+          - Disk Space Monitoring: ${{ needs.disk-space-monitoring.result }}
+          - Network Monitoring: ${{ needs.network-monitoring.result }}
+          - Database Monitoring: ${{ needs.database-monitoring.result }}
+          - API Monitoring: ${{ needs.api-monitoring.result }}
+          - Frontend Monitoring: ${{ needs.frontend-monitoring.result }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

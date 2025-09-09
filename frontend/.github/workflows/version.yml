@@ -1,0 +1,329 @@
+name: Version
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Get version from tag
+      run: |
+        echo "Getting version from tag..."
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "Version: $VERSION"
+
+    - name: Update package.json version
+      run: |
+        echo "Updating package.json version..."
+        npm version $VERSION --no-git-tag-version
+        echo "Updated package.json to version $VERSION"
+
+    - name: Update CHANGELOG.md
+      run: |
+        echo "Updating CHANGELOG.md..."
+        
+        # Create new version entry
+        cat > new_version.md << EOF
+        ## [$VERSION] - $(date +%Y-%m-%d)
+        
+        ### Added
+        - New features and improvements
+        
+        ### Changed
+        - Changes to existing functionality
+        
+        ### Fixed
+        - Bug fixes and improvements
+        
+        ### Security
+        - Security improvements and fixes
+        
+        EOF
+        
+        # Insert new version at the top of CHANGELOG.md
+        sed -i "1r new_version.md" CHANGELOG.md
+        rm new_version.md
+        
+        echo "Updated CHANGELOG.md with version $VERSION"
+
+    - name: Update README.md
+      run: |
+        echo "Updating README.md..."
+        
+        # Update version in README.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" README.md
+        
+        echo "Updated README.md with version $VERSION"
+
+    - name: Update API.md
+      run: |
+        echo "Updating API.md..."
+        
+        # Update version in API.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" API.md
+        
+        echo "Updated API.md with version $VERSION"
+
+    - name: Update DEVELOPMENT.md
+      run: |
+        echo "Updating DEVELOPMENT.md..."
+        
+        # Update version in DEVELOPMENT.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" DEVELOPMENT.md
+        
+        echo "Updated DEVELOPMENT.md with version $VERSION"
+
+    - name: Update TESTING.md
+      run: |
+        echo "Updating TESTING.md..."
+        
+        # Update version in TESTING.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" TESTING.md
+        
+        echo "Updated TESTING.md with version $VERSION"
+
+    - name: Update TROUBLESHOOTING.md
+      run: |
+        echo "Updating TROUBLESHOOTING.md..."
+        
+        # Update version in TROUBLESHOOTING.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" TROUBLESHOOTING.md
+        
+        echo "Updated TROUBLESHOOTING.md with version $VERSION"
+
+    - name: Update SECURITY.md
+      run: |
+        echo "Updating SECURITY.md..."
+        
+        # Update version in SECURITY.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" SECURITY.md
+        
+        echo "Updated SECURITY.md with version $VERSION"
+
+    - name: Update PERFORMANCE.md
+      run: |
+        echo "Updating PERFORMANCE.md..."
+        
+        # Update version in PERFORMANCE.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" PERFORMANCE.md
+        
+        echo "Updated PERFORMANCE.md with version $VERSION"
+
+    - name: Update ACCESSIBILITY.md
+      run: |
+        echo "Updating ACCESSIBILITY.md..."
+        
+        # Update version in ACCESSIBILITY.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" ACCESSIBILITY.md
+        
+        echo "Updated ACCESSIBILITY.md with version $VERSION"
+
+    - name: Update MAINTENANCE.md
+      run: |
+        echo "Updating MAINTENANCE.md..."
+        
+        # Update version in MAINTENANCE.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" MAINTENANCE.md
+        
+        echo "Updated MAINTENANCE.md with version $VERSION"
+
+    - name: Update DEPLOYMENT.md
+      run: |
+        echo "Updating DEPLOYMENT.md..."
+        
+        # Update version in DEPLOYMENT.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" DEPLOYMENT.md
+        
+        echo "Updated DEPLOYMENT.md with version $VERSION"
+
+    - name: Update CONTRIBUTING.md
+      run: |
+        echo "Updating CONTRIBUTING.md..."
+        
+        # Update version in CONTRIBUTING.md
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" CONTRIBUTING.md
+        
+        echo "Updated CONTRIBUTING.md with version $VERSION"
+
+    - name: Update next.config.js
+      run: |
+        echo "Updating next.config.js..."
+        
+        # Update version in next.config.js
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" next.config.js
+        
+        echo "Updated next.config.js with version $VERSION"
+
+    - name: Update tailwind.config.js
+      run: |
+        echo "Updating tailwind.config.js..."
+        
+        # Update version in tailwind.config.js
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" tailwind.config.js
+        
+        echo "Updated tailwind.config.js with version $VERSION"
+
+    - name: Update postcss.config.js
+      run: |
+        echo "Updating postcss.config.js..."
+        
+        # Update version in postcss.config.js
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" postcss.config.js
+        
+        echo "Updated postcss.config.js with version $VERSION"
+
+    - name: Update Dockerfile
+      run: |
+        echo "Updating Dockerfile..."
+        
+        # Update version in Dockerfile
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" Dockerfile
+        
+        echo "Updated Dockerfile with version $VERSION"
+
+    - name: Update docker-compose.yml
+      run: |
+        echo "Updating docker-compose.yml..."
+        
+        # Update version in docker-compose.yml
+        sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" docker-compose.yml
+        
+        echo "Updated docker-compose.yml with version $VERSION"
+
+    - name: Update .github/workflows
+      run: |
+        echo "Updating .github/workflows..."
+        
+        # Update version in all workflow files
+        find .github/workflows -name "*.yml" -o -name "*.yaml" | while read -r file; do
+          if [ -f "$file" ]; then
+            sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" "$file"
+            echo "Updated $file with version $VERSION"
+          fi
+        done
+
+    - name: Update scripts
+      run: |
+        echo "Updating scripts..."
+        
+        # Update version in all script files
+        find . -name "*.sh" | while read -r file; do
+          if [ -f "$file" ]; then
+            sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" "$file"
+            echo "Updated $file with version $VERSION"
+          fi
+        done
+
+    - name: Update configuration files
+      run: |
+        echo "Updating configuration files..."
+        
+        # Update version in all configuration files
+        find . -name "*.json" -o -name "*.yml" -o -name "*.yaml" | grep -v node_modules | grep -v .next | while read -r file; do
+          if [ -f "$file" ]; then
+            sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" "$file"
+            echo "Updated $file with version $VERSION"
+          fi
+        done
+
+    - name: Update documentation files
+      run: |
+        echo "Updating documentation files..."
+        
+        # Update version in all documentation files
+        find . -name "*.md" | while read -r file; do
+          if [ -f "$file" ]; then
+            sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" "$file"
+            echo "Updated $file with version $VERSION"
+          fi
+        done
+
+    - name: Update source files
+      run: |
+        echo "Updating source files..."
+        
+        # Update version in all source files
+        find . -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | grep -v node_modules | grep -v .next | while read -r file; do
+          if [ -f "$file" ]; then
+            sed -i "s/version.*[0-9]\+\.[0-9]\+\.[0-9]\+/version $VERSION/g" "$file"
+            echo "Updated $file with version $VERSION"
+          fi
+        done
+
+    - name: Commit version changes
+      run: |
+        echo "Committing version changes..."
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "chore: bump version to $VERSION" || exit 0
+        git push
+
+    - name: Create release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changes in this Release
+          
+          See [CHANGELOG.md](./CHANGELOG.md) for detailed information about this release.
+          
+          ## Installation
+          
+          ```bash
+          npm install blocpol-frontend@${{ github.ref_name }}
+          ```
+          
+          ## Documentation
+          
+          - [README.md](./README.md)
+          - [API Documentation](./API.md)
+          - [Development Guide](./DEVELOPMENT.md)
+          - [Testing Guide](./TESTING.md)
+          
+          ## Support
+          
+          For support and questions:
+          - [GitHub Issues](https://github.com/yourusername/blocpol-frontend/issues)
+          - [GitHub Discussions](https://github.com/yourusername/blocpol-frontend/discussions)
+          - [Email](mailto:support@blocpol.com)
+        draft: false
+        prerelease: false
+
+    - name: Publish to NPM
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Notify version team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#releases'
+        text: |
+          🎉 New version ${{ github.ref_name }} released!
+          - Version: ${{ github.ref_name }}
+          - Tag: ${{ github.ref }}
+          - URL: ${{ github.event.release.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

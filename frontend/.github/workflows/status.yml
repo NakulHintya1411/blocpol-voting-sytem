@@ -1,0 +1,344 @@
+name: Status
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  check-status:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check application status
+      run: |
+        echo "Checking application status..."
+        
+        # Check if application is running
+        if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+          echo "✅ Application is running"
+        else
+          echo "❌ Application is not running"
+          exit 1
+        fi
+        
+        # Check if API is running
+        if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
+          echo "✅ API is running"
+        else
+          echo "❌ API is not running"
+          exit 1
+        fi
+        
+        # Check if database is accessible
+        if curl -f http://localhost:3001/api/status > /dev/null 2>&1; then
+          echo "✅ Database is accessible"
+        else
+          echo "❌ Database is not accessible"
+          exit 1
+        fi
+
+    - name: Check response times
+      run: |
+        echo "Checking response times..."
+        
+        # Check application response time
+        app_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:3000)
+        echo "Application response time: ${app_time}s"
+        
+        # Check API response time
+        api_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:3001/api/health)
+        echo "API response time: ${api_time}s"
+        
+        # Check if response times are acceptable
+        if (( $(echo "$app_time > 2.0" | bc -l) )); then
+          echo "❌ Application response time is too high: ${app_time}s"
+          exit 1
+        fi
+        
+        if (( $(echo "$api_time > 1.0" | bc -l) )); then
+          echo "❌ API response time is too high: ${api_time}s"
+          exit 1
+        fi
+        
+        echo "✅ Response times are acceptable"
+
+    - name: Check error rates
+      run: |
+        echo "Checking error rates..."
+        
+        # Check for recent errors
+        error_count=$(grep -c "ERROR" logs/error.log 2>/dev/null || echo "0")
+        echo "Recent errors: ${error_count}"
+        
+        # Check for recent warnings
+        warning_count=$(grep -c "WARN" logs/warning.log 2>/dev/null || echo "0")
+        echo "Recent warnings: ${warning_count}"
+        
+        # Check if error rates are acceptable
+        if [ "$error_count" -gt 10 ]; then
+          echo "❌ Too many errors: ${error_count}"
+          exit 1
+        fi
+        
+        if [ "$warning_count" -gt 50 ]; then
+          echo "❌ Too many warnings: ${warning_count}"
+          exit 1
+        fi
+        
+        echo "✅ Error rates are acceptable"
+
+    - name: Check resource usage
+      run: |
+        echo "Checking resource usage..."
+        
+        # Check memory usage
+        memory_usage=$(ps aux | grep node | awk '{sum+=$6} END {print sum/1024}' 2>/dev/null || echo "0")
+        echo "Memory usage: ${memory_usage}MB"
+        
+        # Check CPU usage
+        cpu_usage=$(ps aux | grep node | awk '{sum+=$3} END {print sum}' 2>/dev/null || echo "0")
+        echo "CPU usage: ${cpu_usage}%"
+        
+        # Check disk usage
+        disk_usage=$(df -h / | awk 'NR==2{print $5}' | sed 's/%//' 2>/dev/null || echo "0")
+        echo "Disk usage: ${disk_usage}%"
+        
+        # Check if resource usage is acceptable
+        if (( $(echo "$memory_usage > 1000" | bc -l) )); then
+          echo "❌ Memory usage is too high: ${memory_usage}MB"
+          exit 1
+        fi
+        
+        if (( $(echo "$cpu_usage > 80" | bc -l) )); then
+          echo "❌ CPU usage is too high: ${cpu_usage}%"
+          exit 1
+        fi
+        
+        if [ "$disk_usage" -gt 80 ]; then
+          echo "❌ Disk usage is too high: ${disk_usage}%"
+          exit 1
+        fi
+        
+        echo "✅ Resource usage is acceptable"
+
+    - name: Check security status
+      run: |
+        echo "Checking security status..."
+        
+        # Check for security issues
+        security_issues=$(grep -c "SECURITY" logs/security.log 2>/dev/null || echo "0")
+        echo "Security issues: ${security_issues}"
+        
+        # Check for failed login attempts
+        failed_logins=$(grep -c "FAILED_LOGIN" logs/auth.log 2>/dev/null || echo "0")
+        echo "Failed logins: ${failed_logins}"
+        
+        # Check if security status is acceptable
+        if [ "$security_issues" -gt 0 ]; then
+          echo "❌ Security issues detected: ${security_issues}"
+          exit 1
+        fi
+        
+        if [ "$failed_logins" -gt 20 ]; then
+          echo "❌ Too many failed logins: ${failed_logins}"
+          exit 1
+        fi
+        
+        echo "✅ Security status is acceptable"
+
+    - name: Check network connectivity
+      run: |
+        echo "Checking network connectivity..."
+        
+        # Check internet connectivity
+        if ping -c 1 google.com > /dev/null 2>&1; then
+          echo "✅ Internet connectivity is working"
+        else
+          echo "❌ Internet connectivity issues"
+          exit 1
+        fi
+        
+        # Check DNS resolution
+        if nslookup google.com > /dev/null 2>&1; then
+          echo "✅ DNS resolution is working"
+        else
+          echo "❌ DNS resolution issues"
+          exit 1
+        fi
+        
+        # Check local network
+        if ping -c 1 localhost > /dev/null 2>&1; then
+          echo "✅ Local network is working"
+        else
+          echo "❌ Local network issues"
+          exit 1
+        fi
+
+    - name: Check database status
+      run: |
+        echo "Checking database status..."
+        
+        # Check database connections
+        db_connections=$(psql -c "SELECT count(*) FROM pg_stat_activity;" 2>/dev/null | awk 'NR==3{print $1}' || echo "0")
+        echo "Database connections: ${db_connections}"
+        
+        # Check database size
+        db_size=$(psql -c "SELECT pg_size_pretty(pg_database_size('blocpol'));" 2>/dev/null | awk 'NR==3{print $1}' || echo "0")
+        echo "Database size: ${db_size}"
+        
+        # Check if database status is acceptable
+        if [ "$db_connections" -gt 100 ]; then
+          echo "❌ Too many database connections: ${db_connections}"
+          exit 1
+        fi
+        
+        if [[ "$db_size" == *"GB"* ]]; then
+          size_gb=$(echo $db_size | sed 's/GB//')
+          if (( $(echo "$size_gb > 10" | bc -l) )); then
+            echo "❌ Database size is too large: ${db_size}"
+            exit 1
+          fi
+        fi
+        
+        echo "✅ Database status is acceptable"
+
+    - name: Check API endpoints
+      run: |
+        echo "Checking API endpoints..."
+        
+        # Check all API endpoints
+        endpoints=("/api/health" "/api/status" "/api/candidates" "/api/results")
+        for endpoint in "${endpoints[@]}"; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001$endpoint 2>/dev/null || echo "000")
+          if [ "$response" -eq 200 ]; then
+            echo "✅ $endpoint is working"
+          else
+            echo "❌ $endpoint returned $response"
+            exit 1
+          fi
+        done
+        
+        echo "✅ All API endpoints are working"
+
+    - name: Check frontend pages
+      run: |
+        echo "Checking frontend pages..."
+        
+        # Check all frontend pages
+        pages=("/" "/candidates" "/results" "/register")
+        for page in "${pages[@]}"; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000$page 2>/dev/null || echo "000")
+          if [ "$response" -eq 200 ]; then
+            echo "✅ $page is working"
+          else
+            echo "❌ $page returned $response"
+            exit 1
+          fi
+        done
+        
+        echo "✅ All frontend pages are working"
+
+    - name: Check system uptime
+      run: |
+        echo "Checking system uptime..."
+        
+        # Check system uptime
+        uptime=$(uptime | awk '{print $3,$4}' | sed 's/,//' 2>/dev/null || echo "0")
+        echo "System uptime: ${uptime}"
+        
+        # Check if system was recently restarted
+        if [[ "$uptime" == *"days"* ]]; then
+          days=$(echo $uptime | awk '{print $1}')
+          if [ "$days" -lt 1 ]; then
+            echo "⚠️ System was recently restarted"
+          else
+            echo "✅ System has been running for ${days} days"
+          fi
+        else
+          echo "⚠️ System uptime is less than a day"
+        fi
+
+    - name: Generate status report
+      run: |
+        echo "Generating status report..."
+        
+        # Create status report
+        cat > status-report.md << EOF
+        # System Status Report
+        
+        **Generated:** $(date)
+        **System:** $(uname -a)
+        **Uptime:** $(uptime)
+        
+        ## Application Status
+        - **Application:** $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health 2>/dev/null || echo "DOWN")
+        - **API:** $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "DOWN")
+        - **Database:** $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/status 2>/dev/null || echo "DOWN")
+        
+        ## Performance Metrics
+        - **Application Response Time:** $(curl -o /dev/null -s -w '%{time_total}' http://localhost:3000 2>/dev/null || echo "N/A")s
+        - **API Response Time:** $(curl -o /dev/null -s -w '%{time_total}' http://localhost:3001/api/health 2>/dev/null || echo "N/A")s
+        - **Memory Usage:** $(ps aux | grep node | awk '{sum+=$6} END {print sum/1024}' 2>/dev/null || echo "N/A")MB
+        - **CPU Usage:** $(ps aux | grep node | awk '{sum+=$3} END {print sum}' 2>/dev/null || echo "N/A")%
+        - **Disk Usage:** $(df -h / | awk 'NR==2{print $5}' 2>/dev/null || echo "N/A")
+        
+        ## Error Metrics
+        - **Recent Errors:** $(grep -c "ERROR" logs/error.log 2>/dev/null || echo "0")
+        - **Recent Warnings:** $(grep -c "WARN" logs/warning.log 2>/dev/null || echo "0")
+        - **Security Issues:** $(grep -c "SECURITY" logs/security.log 2>/dev/null || echo "0")
+        - **Failed Logins:** $(grep -c "FAILED_LOGIN" logs/auth.log 2>/dev/null || echo "0")
+        
+        ## Network Status
+        - **Internet Connectivity:** $(ping -c 1 google.com > /dev/null 2>&1 && echo "OK" || echo "FAILED")
+        - **DNS Resolution:** $(nslookup google.com > /dev/null 2>&1 && echo "OK" || echo "FAILED")
+        - **Local Network:** $(ping -c 1 localhost > /dev/null 2>&1 && echo "OK" || echo "FAILED")
+        
+        ## Database Status
+        - **Connections:** $(psql -c "SELECT count(*) FROM pg_stat_activity;" 2>/dev/null | awk 'NR==3{print $1}' || echo "N/A")
+        - **Size:** $(psql -c "SELECT pg_size_pretty(pg_database_size('blocpol'));" 2>/dev/null | awk 'NR==3{print $1}' || echo "N/A")
+        
+        ## API Endpoints
+        EOF
+        
+        # Add API endpoint status
+        endpoints=("/api/health" "/api/status" "/api/candidates" "/api/results")
+        for endpoint in "${endpoints[@]}"; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001$endpoint 2>/dev/null || echo "000")
+          echo "- **$endpoint:** $response" >> status-report.md
+        done
+        
+        # Add frontend page status
+        echo "" >> status-report.md
+        echo "## Frontend Pages" >> status-report.md
+        pages=("/" "/candidates" "/results" "/register")
+        for page in "${pages[@]}"; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000$page 2>/dev/null || echo "000")
+          echo "- **$page:** $response" >> status-report.md
+        done
+        
+        echo "Status report generated: status-report.md"
+
+    - name: Upload status report
+      uses: actions/upload-artifact@v3
+      with:
+        name: status-report
+        path: status-report.md
+
+    - name: Notify status
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#status'
+        text: |
+          📊 System Status Report
+          - **Application:** $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health 2>/dev/null || echo "DOWN")
+          - **API:** $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "DOWN")
+          - **Database:** $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/status 2>/dev/null || echo "DOWN")
+          - **Memory:** $(ps aux | grep node | awk '{sum+=$6} END {print sum/1024}' 2>/dev/null || echo "N/A")MB
+          - **CPU:** $(ps aux | grep node | awk '{sum+=$3} END {print sum}' 2>/dev/null || echo "N/A")%
+          - **Disk:** $(df -h / | awk 'NR==2{print $5}' 2>/dev/null || echo "N/A")
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

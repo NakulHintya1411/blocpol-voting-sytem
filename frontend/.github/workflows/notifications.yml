@@ -1,0 +1,374 @@
+name: Notifications
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["CI", "Security", "Performance", "Accessibility"]
+    types: [completed]
+
+jobs:
+  notify-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+    - name: Notify push
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#deployments'
+        text: |
+          🚀 New push to ${{ github.ref_name }}
+          - Author: ${{ github.actor }}
+          - Commit: ${{ github.sha }}
+          - Message: ${{ github.event.head_commit.message }}
+          - URL: ${{ github.event.head_commit.url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-pull-request:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Notify pull request
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#pull-requests'
+        text: |
+          🔀 New pull request
+          - Title: ${{ github.event.pull_request.title }}
+          - Author: ${{ github.event.pull_request.user.login }}
+          - Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
+          - URL: ${{ github.event.pull_request.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+    - name: Notify release
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#releases'
+        text: |
+          🎉 New release published
+          - Tag: ${{ github.event.release.tag_name }}
+          - Title: ${{ github.event.release.name }}
+          - Author: ${{ github.event.release.author.login }}
+          - URL: ${{ github.event.release.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-success:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+
+    steps:
+    - name: Notify workflow success
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          ✅ Workflow completed successfully
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-failure:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
+
+    steps:
+    - name: Notify workflow failure
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#workflows'
+        text: |
+          ❌ Workflow failed
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-cancelled:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'cancelled'
+
+    steps:
+    - name: Notify workflow cancelled
+      uses: 8398a7/action-slack@v3
+      with:
+        status: cancelled
+        channel: '#workflows'
+        text: |
+          ⏹️ Workflow cancelled
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-timed-out:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'timed_out'
+
+    steps:
+    - name: Notify workflow timed out
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#workflows'
+        text: |
+          ⏰ Workflow timed out
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-stale:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'stale'
+
+    steps:
+    - name: Notify workflow stale
+      uses: 8398a7/action-slack@v3
+      with:
+        status: warning
+        channel: '#workflows'
+        text: |
+          🕰️ Workflow became stale
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-skipped:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'skipped'
+
+    steps:
+    - name: Notify workflow skipped
+      uses: 8398a7/action-slack@v3
+      with:
+        status: warning
+        channel: '#workflows'
+        text: |
+          ⏭️ Workflow skipped
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-action_required:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'action_required'
+
+    steps:
+    - name: Notify workflow action required
+      uses: 8398a7/action-slack@v3
+      with:
+        status: warning
+        channel: '#workflows'
+        text: |
+          ⚠️ Workflow requires action
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-neutral:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'neutral'
+
+    steps:
+    - name: Notify workflow neutral
+      uses: 8398a7/action-slack@v3
+      with:
+        status: warning
+        channel: '#workflows'
+        text: |
+          ⚪ Workflow completed with neutral result
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-unknown:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'unknown'
+
+    steps:
+    - name: Notify workflow unknown
+      uses: 8398a7/action-slack@v3
+      with:
+        status: warning
+        channel: '#workflows'
+        text: |
+          ❓ Workflow completed with unknown result
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-in_progress:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'in_progress'
+
+    steps:
+    - name: Notify workflow in progress
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          🔄 Workflow in progress
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-queued:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'queued'
+
+    steps:
+    - name: Notify workflow queued
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          ⏳ Workflow queued
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-requested:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'requested'
+
+    steps:
+    - name: Notify workflow requested
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          📋 Workflow requested
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-waiting:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'waiting'
+
+    steps:
+    - name: Notify workflow waiting
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          ⏸️ Workflow waiting
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-pending:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'pending'
+
+    steps:
+    - name: Notify workflow pending
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          ⏳ Workflow pending
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-incomplete:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'incomplete'
+
+    steps:
+    - name: Notify workflow incomplete
+      uses: 8398a7/action-slack@v3
+      with:
+        status: warning
+        channel: '#workflows'
+        text: |
+          🔄 Workflow incomplete
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notify-workflow-completed:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'completed'
+
+    steps:
+    - name: Notify workflow completed
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#workflows'
+        text: |
+          ✅ Workflow completed
+          - Workflow: ${{ github.event.workflow_run.name }}
+          - Branch: ${{ github.event.workflow_run.head_branch }}
+          - Commit: ${{ github.event.workflow_run.head_sha }}
+          - URL: ${{ github.event.workflow_run.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

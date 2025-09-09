@@ -1,0 +1,283 @@
+name: Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Daily at 2 AM
+  workflow_dispatch:
+
+jobs:
+  backup-code:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create code backup
+      run: |
+        tar -czf code-backup-$(date +%Y%m%d).tar.gz .
+        echo "Code backup created: code-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload code backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp code-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/code/
+
+    - name: Clean up local backup
+      run: rm code-backup-$(date +%Y%m%d).tar.gz
+
+  backup-database:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Backup database
+      run: |
+        pg_dump ${{ secrets.DATABASE_URL }} > db-backup-$(date +%Y%m%d).sql
+        echo "Database backup created: db-backup-$(date +%Y%m%d).sql"
+
+    - name: Upload database backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp db-backup-$(date +%Y%m%d).sql s3://blocpol-backups/database/
+
+    - name: Clean up local backup
+      run: rm db-backup-$(date +%Y%m%d).sql
+
+  backup-config:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create config backup
+      run: |
+        tar -czf config-backup-$(date +%Y%m%d).tar.gz .env* *.yml *.yaml *.json
+        echo "Config backup created: config-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload config backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp config-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/config/
+
+    - name: Clean up local backup
+      run: rm config-backup-$(date +%Y%m%d).tar.gz
+
+  backup-assets:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create assets backup
+      run: |
+        tar -czf assets-backup-$(date +%Y%m%d).tar.gz public/
+        echo "Assets backup created: assets-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload assets backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp assets-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/assets/
+
+    - name: Clean up local backup
+      run: rm assets-backup-$(date +%Y%m%d).tar.gz
+
+  backup-logs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create logs backup
+      run: |
+        tar -czf logs-backup-$(date +%Y%m%d).tar.gz logs/
+        echo "Logs backup created: logs-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload logs backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp logs-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/logs/
+
+    - name: Clean up local backup
+      run: rm logs-backup-$(date +%Y%m%d).tar.gz
+
+  backup-documentation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create documentation backup
+      run: |
+        tar -czf docs-backup-$(date +%Y%m%d).tar.gz *.md docs/
+        echo "Documentation backup created: docs-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload documentation backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp docs-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/documentation/
+
+    - name: Clean up local backup
+      run: rm docs-backup-$(date +%Y%m%d).tar.gz
+
+  backup-test-results:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create test results backup
+      run: |
+        tar -czf test-results-backup-$(date +%Y%m%d).tar.gz test-results/ coverage/
+        echo "Test results backup created: test-results-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload test results backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp test-results-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/test-results/
+
+    - name: Clean up local backup
+      run: rm test-results-backup-$(date +%Y%m%d).tar.gz
+
+  backup-performance:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create performance backup
+      run: |
+        tar -czf performance-backup-$(date +%Y%m%d).tar.gz performance-results/ lighthouse-results/
+        echo "Performance backup created: performance-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload performance backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp performance-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/performance/
+
+    - name: Clean up local backup
+      run: rm performance-backup-$(date +%Y%m%d).tar.gz
+
+  backup-accessibility:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create accessibility backup
+      run: |
+        tar -czf accessibility-backup-$(date +%Y%m%d).tar.gz accessibility-results/ axe-results/
+        echo "Accessibility backup created: accessibility-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload accessibility backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp accessibility-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/accessibility/
+
+    - name: Clean up local backup
+      run: rm accessibility-backup-$(date +%Y%m%d).tar.gz
+
+  backup-security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create security backup
+      run: |
+        tar -czf security-backup-$(date +%Y%m%d).tar.gz security-results/ snyk-results/
+        echo "Security backup created: security-backup-$(date +%Y%m%d).tar.gz"
+
+    - name: Upload security backup to S3
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to S3
+      run: |
+        aws s3 cp security-backup-$(date +%Y%m%d).tar.gz s3://blocpol-backups/security/
+
+    - name: Clean up local backup
+      run: rm security-backup-$(date +%Y%m%d).tar.gz
+
+  backup-notification:
+    runs-on: ubuntu-latest
+    needs: [backup-code, backup-database, backup-config, backup-assets, backup-logs, backup-documentation, backup-test-results, backup-performance, backup-accessibility, backup-security]
+    if: always()
+
+    steps:
+    - name: Notify backup team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#backups'
+        text: |
+          Backup completed for ${{ github.ref_name }}
+          - Code Backup: ${{ needs.backup-code.result }}
+          - Database Backup: ${{ needs.backup-database.result }}
+          - Config Backup: ${{ needs.backup-config.result }}
+          - Assets Backup: ${{ needs.backup-assets.result }}
+          - Logs Backup: ${{ needs.backup-logs.result }}
+          - Documentation Backup: ${{ needs.backup-documentation.result }}
+          - Test Results Backup: ${{ needs.backup-test-results.result }}
+          - Performance Backup: ${{ needs.backup-performance.result }}
+          - Accessibility Backup: ${{ needs.backup-accessibility.result }}
+          - Security Backup: ${{ needs.backup-security.result }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

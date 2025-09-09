@@ -1,0 +1,244 @@
+name: Performance
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 3 * * 1' # Weekly on Monday at 3 AM
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run Lighthouse CI
+      run: |
+        npm install -g @lhci/cli
+        lhci autorun
+
+    - name: Upload Lighthouse results
+      uses: actions/upload-artifact@v3
+      with:
+        name: lighthouse-results
+        path: .lighthouseci/
+
+  bundle-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Analyze bundle size
+      run: |
+        npx @next/bundle-analyzer .next/static/chunks/*.js
+
+    - name: Upload bundle analysis
+      uses: actions/upload-artifact@v3
+      with:
+        name: bundle-analysis
+        path: .next/analyze/
+
+  performance-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run performance tests
+      run: |
+        npm install -g artillery
+        artillery run performance-tests.yml
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: performance-results.json
+
+  web-vitals:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run Web Vitals tests
+      run: |
+        npm install -g web-vitals-cli
+        web-vitals-cli http://localhost:3000
+
+    - name: Upload Web Vitals results
+      uses: actions/upload-artifact@v3
+      with:
+        name: web-vitals-results
+        path: web-vitals-results.json
+
+  memory-usage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application with memory monitoring
+      run: |
+        npm start &
+        sleep 10
+        ps aux | grep node
+        cat /proc/meminfo
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Monitor memory usage
+      run: |
+        for i in {1..10}; do
+          curl -s http://localhost:3000 > /dev/null
+          ps aux | grep node | head -1
+          sleep 5
+        done
+
+  load-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run load tests
+      run: |
+        npm install -g k6
+        k6 run load-test.js
+
+    - name: Upload load test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: load-test-results
+        path: load-test-results.json
+
+  performance-notification:
+    runs-on: ubuntu-latest
+    needs: [lighthouse, bundle-analysis, performance-tests, web-vitals, memory-usage, load-testing]
+    if: always()
+
+    steps:
+    - name: Notify performance team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#performance'
+        text: |
+          Performance scan completed for ${{ github.ref_name }}
+          - Lighthouse: ${{ needs.lighthouse.result }}
+          - Bundle Analysis: ${{ needs.bundle-analysis.result }}
+          - Performance Tests: ${{ needs.performance-tests.result }}
+          - Web Vitals: ${{ needs.web-vitals.result }}
+          - Memory Usage: ${{ needs.memory-usage.result }}
+          - Load Testing: ${{ needs.load-testing.result }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

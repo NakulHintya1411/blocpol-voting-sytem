@@ -1,0 +1,290 @@
+name: Accessibility
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 4 * * 1' # Weekly on Monday at 4 AM
+
+jobs:
+  accessibility-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run accessibility tests
+      run: npm run test:a11y
+
+    - name: Upload accessibility results
+      uses: actions/upload-artifact@v3
+      with:
+        name: accessibility-results
+        path: accessibility-results.json
+
+  axe-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run axe tests
+      run: |
+        npm install -g @axe-core/cli
+        axe http://localhost:3000 --reporter json --output axe-results.json
+
+    - name: Upload axe results
+      uses: actions/upload-artifact@v3
+      with:
+        name: axe-results
+        path: axe-results.json
+
+  pa11y-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run pa11y tests
+      run: |
+        npm install -g pa11y
+        pa11y http://localhost:3000 --reporter json --output pa11y-results.json
+
+    - name: Upload pa11y results
+      uses: actions/upload-artifact@v3
+      with:
+        name: pa11y-results
+        path: pa11y-results.json
+
+  wave-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run WAVE tests
+      run: |
+        npm install -g wave-cli
+        wave http://localhost:3000 --output wave-results.json
+
+    - name: Upload WAVE results
+      uses: actions/upload-artifact@v3
+      with:
+        name: wave-results
+        path: wave-results.json
+
+  color-contrast:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run color contrast tests
+      run: |
+        npm install -g color-contrast-cli
+        color-contrast-cli http://localhost:3000 --output color-contrast-results.json
+
+    - name: Upload color contrast results
+      uses: actions/upload-artifact@v3
+      with:
+        name: color-contrast-results
+        path: color-contrast-results.json
+
+  keyboard-navigation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run keyboard navigation tests
+      run: |
+        npm install -g keyboard-navigation-cli
+        keyboard-navigation-cli http://localhost:3000 --output keyboard-results.json
+
+    - name: Upload keyboard results
+      uses: actions/upload-artifact@v3
+      with:
+        name: keyboard-results
+        path: keyboard-results.json
+
+  screen-reader:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: npm start &
+      env:
+        NODE_ENV: production
+
+    - name: Wait for application to start
+      run: npx wait-on http://localhost:3000
+
+    - name: Run screen reader tests
+      run: |
+        npm install -g screen-reader-cli
+        screen-reader-cli http://localhost:3000 --output screen-reader-results.json
+
+    - name: Upload screen reader results
+      uses: actions/upload-artifact@v3
+      with:
+        name: screen-reader-results
+        path: screen-reader-results.json
+
+  accessibility-notification:
+    runs-on: ubuntu-latest
+    needs: [accessibility-tests, axe-tests, pa11y-tests, wave-tests, color-contrast, keyboard-navigation, screen-reader]
+    if: always()
+
+    steps:
+    - name: Notify accessibility team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#accessibility'
+        text: |
+          Accessibility scan completed for ${{ github.ref_name }}
+          - Accessibility Tests: ${{ needs.accessibility-tests.result }}
+          - Axe Tests: ${{ needs.axe-tests.result }}
+          - Pa11y Tests: ${{ needs.pa11y-tests.result }}
+          - WAVE Tests: ${{ needs.wave-tests.result }}
+          - Color Contrast: ${{ needs.color-contrast.result }}
+          - Keyboard Navigation: ${{ needs.keyboard-navigation.result }}
+          - Screen Reader: ${{ needs.screen-reader.result }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
