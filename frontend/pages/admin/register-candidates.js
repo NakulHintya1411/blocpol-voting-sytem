@@ -18,6 +18,13 @@ import {
   XCircle
 } from 'lucide-react';
 
+// Disable static generation for this page
+export async function getServerSideProps() {
+  return {
+    props: {},
+  };
+}
+
 export default function RegisterCandidates() {
   const router = useRouter();
   const { account, isConnected } = useWallet();

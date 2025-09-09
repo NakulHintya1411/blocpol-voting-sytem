@@ -17,6 +17,13 @@ import {
   X
 } from 'lucide-react';
 
+// Disable static generation for this page
+export async function getServerSideProps() {
+  return {
+    props: {},
+  };
+}
+
 export default function CreateElection() {
   const router = useRouter();
   const { account, isConnected } = useWallet();
