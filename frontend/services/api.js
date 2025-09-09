@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -100,6 +100,10 @@ export const apiService = {
     }
   },
 
+
+
+
+  
   // Admin functions
   checkAdminStatus: async (walletAddress) => {
     try {
@@ -112,7 +116,7 @@ export const apiService = {
 
   getAdminStats: async () => {
     try {
-      const response = await api.get('/admin/stats');
+      const response = await api.get('/admin-stats');
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch admin stats');
@@ -121,7 +125,7 @@ export const apiService = {
 
   getElections: async () => {
     try {
-      const response = await api.get('/admin/elections');
+      const response = await api.get('/elections');
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch elections');
