@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { account, isConnected } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({
     totalVoters: 0,
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
   const [recentCandidates, setRecentCandidates] = useState([]);
 
   useEffect(() => {
+    setIsClient(true);
     // Always allow admin access for testing purposes
     setIsAdmin(true);
     fetchDashboardData();

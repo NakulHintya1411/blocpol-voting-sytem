@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
@@ -21,6 +21,7 @@ export default function CreateElection() {
   const router = useRouter();
   const { account, isConnected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -29,7 +30,15 @@ export default function CreateElection() {
     candidates: [{ name: '', description: '', party: '' }]
   });
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Redirect if not admin
+  if (!isClient) {
+    return <LoadingSpinner />;
+  }
+
   if (!isConnected || !account) {
     router.push('/');
     return null;

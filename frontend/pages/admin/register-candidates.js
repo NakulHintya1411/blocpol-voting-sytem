@@ -22,6 +22,7 @@ export default function RegisterCandidates() {
   const router = useRouter();
   const { account, isConnected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [elections, setElections] = useState([]);
   const [selectedElection, setSelectedElection] = useState('');
   const [candidates, setCandidates] = useState([]);
@@ -36,7 +37,15 @@ export default function RegisterCandidates() {
     phone: ''
   });
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Redirect if not admin
+  if (!isClient) {
+    return <LoadingSpinner />;
+  }
+
   if (!isConnected || !account) {
     router.push('/');
     return null;
